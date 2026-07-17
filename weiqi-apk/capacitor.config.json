@@ -1,0 +1,12 @@
+{
+  "appId": "com.weiqi.app",
+  "appName": "围棋教学",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

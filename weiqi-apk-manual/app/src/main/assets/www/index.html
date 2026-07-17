@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="围棋教学">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="围棋教学App - 从入门到精通">
+  <title>围棋教学</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚫</text></svg>">
+</head>
+<body>
+
+  <!-- 顶部栏 -->
+  <div class="top-bar">
+    <button class="back-btn" id="btnBack">←</button>
+    <span class="title">围棋教学</span>
+  </div>
+
+  <!-- ==================== 主菜单 ==================== -->
+  <div class="screen active" id="screen-menu">
+    <div class="menu-header">
+      <h1>⚫ 围棋教学 ⚪</h1>
+      <p class="subtitle">从入门到精通，循序渐进学围棋</p>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="app.navigateTo('teaching')">
+        <div class="card-icon">📖</div>
+        <div class="card-title">教学课程</div>
+        <div class="card-desc">基础概念 · 术语 · 技巧</div>
+      </div>
+      <div class="menu-card" onclick="app.navigateTo('challenge')">
+        <div class="card-icon">🏆</div>
+        <div class="card-title">进阶闯关</div>
+        <div class="card-desc">60关挑战 · 提示辅助</div>
+      </div>
+      <div class="menu-card" onclick="app.navigateTo('battle')">
+        <div class="card-icon">⚔️</div>
+        <div class="card-title">对战</div>
+        <div class="card-desc">双人对战 · AI对战</div>
+      </div>
+      <div class="menu-card" onclick="app.navigateTo('gomoku')">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">五子棋</div>
+        <div class="card-desc">双人对战 · AI对战</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-levels">0/60</div>
+        <div class="stat-label">已通关卡</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-lessons">0/25</div>
+        <div class="stat-label">已完成课程</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 教学课程列表 ==================== -->
+  <div class="screen" id="screen-teaching">
+    <div id="teaching-list"></div>
+  </div>
+
+  <!-- ==================== 课程详情 ==================== -->
+  <div class="screen" id="screen-lesson">
+    <h2 id="lesson-title"></h2>
+    <div class="lesson-board-container">
+      <canvas id="lesson-canvas" width="400" height="400"></canvas>
+    </div>
+    <div id="lesson-instruction"></div>
+    <div id="lesson-content"></div>
+    <div id="lesson-goal"></div>
+  </div>
+
+  <!-- ==================== 闯关列表 ==================== -->
+  <div class="screen" id="screen-challenge">
+    <div id="challenge-list"></div>
+  </div>
+
+  <!-- ==================== 关卡详情 ==================== -->
+  <div class="screen" id="screen-level">
+    <h2 id="level-title"></h2>
+    <div class="level-board-container">
+      <canvas id="level-canvas" width="400" height="400"></canvas>
+    </div>
+    <div id="level-desc"></div>
+    <div id="level-goal"></div>
+    <div class="level-controls">
+      <button class="btn btn-accent" id="btnHint">💡 提示</button>
+      <button class="btn btn-secondary" id="btnResetLevel">🔄 重置</button>
+    </div>
+  </div>
+
+  <!-- ==================== 双人对战 ==================== -->
+  <div class="screen" id="screen-pvp">
+    <div class="game-board-container">
+      <canvas id="pvp-canvas" width="500" height="500"></canvas>
+    </div>
+    <div class="game-info">
+      <div class="current-player" id="pvp-current">⚫ 黑方落子</div>
+      <div class="captures" id="pvp-captures">提子: ⚫0 ⚪0</div>
+    </div>
+    <div class="game-controls">
+      <button class="btn btn-secondary" id="btnUndoPvP">↩ 悔棋</button>
+      <button class="btn btn-secondary" id="btnPassPvP">✋ 虚手</button>
+      <button class="btn btn-accent" id="btnEndPvP">🏁 终局</button>
+    </div>
+  </div>
+
+  <!-- ==================== 对战模式选择 ==================== -->
+  <div class="screen" id="screen-battle">
+    <div id="battle-options"></div>
+  </div>
+
+  <!-- ==================== AI对战选择 ==================== -->
+  <div class="screen" id="screen-ai">
+    <div id="ai-options"></div>
+  </div>
+
+  <!-- ==================== AI对战 ==================== -->
+  <div class="screen" id="screen-ai-game">
+    <div class="game-board-container">
+      <canvas id="ai-game-canvas" width="500" height="500"></canvas>
+    </div>
+    <div class="ai-thinking" id="ai-thinking">
+      🤖 AI思考中... <span id="ai-diff-label"></span>
+    </div>
+    <div class="game-info">
+      <div class="current-player"><span id="ai-current">⚫ 你（黑）落子</span><span class="diff-badge" id="ai-diff-badge"></span></div>
+      <div class="captures" id="ai-captures">提子: ⚫0 ⚪0</div>
+    </div>
+    <div class="game-controls">
+      <button class="btn btn-secondary" id="btnUndoAI">↩ 悔棋</button>
+      <button class="btn btn-accent" id="btnEndAI">🏁 终局</button>
+    </div>
+  </div>
+
+  <!-- ==================== 五子棋模式选择 ==================== -->
+  <div class="screen" id="screen-gomoku">
+    <div id="gomoku-options"></div>
+  </div>
+
+  <!-- ==================== 五子棋教学列表 ==================== -->
+  <div class="screen" id="screen-gomoku-teaching">
+    <div id="gomoku-teaching-list"></div>
+  </div>
+
+  <!-- ==================== 五子棋教学详情 ==================== -->
+  <div class="screen" id="screen-gomoku-lesson">
+    <h2 id="gomoku-lesson-title"></h2>
+    <div class="lesson-board-container">
+      <canvas id="gomoku-lesson-canvas" width="400" height="400"></canvas>
+    </div>
+    <div id="gomoku-lesson-content"></div>
+    <div id="gomoku-lesson-goal"></div>
+  </div>
+
+  <!-- ==================== 五子棋双人对战 ==================== -->
+  <div class="screen" id="screen-gomoku-pvp">
+    <div class="game-board-container">
+      <canvas id="gomoku-pvp-canvas" width="500" height="500"></canvas>
+    </div>
+    <div class="game-info">
+      <div class="current-player" id="gomoku-pvp-current">⚫ 黑方落子</div>
+    </div>
+    <div class="game-controls">
+      <button class="btn btn-secondary" id="btnUndoGomokuPvP">↩ 悔棋</button>
+      <button class="btn btn-accent" id="btnRestartGomokuPvP">🔄 重新开始</button>
+    </div>
+  </div>
+
+  <!-- ==================== 五子棋AI对战 ==================== -->
+  <div class="screen" id="screen-gomoku-ai">
+    <div class="game-board-container">
+      <canvas id="gomoku-ai-canvas" width="500" height="500"></canvas>
+    </div>
+    <div class="ai-thinking" id="gomoku-ai-thinking">
+      🤖 AI思考中... <span id="gomoku-ai-diff-label"></span>
+    </div>
+    <div class="game-info">
+      <div class="current-player"><span id="gomoku-ai-current">⚫ 你（黑）落子</span><span class="diff-badge" id="gomoku-ai-diff-badge"></span></div>
+    </div>
+    <div class="game-controls">
+      <button class="btn btn-secondary" id="btnUndoGomokuAI">↩ 悔棋</button>
+      <button class="btn btn-accent" id="btnRestartGomokuAI">🔄 重新开始</button>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗 ==================== -->
+  <div class="dialog-overlay" id="level-complete-dialog">
+    <div class="dialog">
+      <h3>🎉 通关成功！</h3>
+      <div class="stars-display">⭐⭐</div>
+      <div class="hint-used"></div>
+      <button class="btn btn-primary" id="nextLevel">下一关 ▶</button>
+      <button class="btn btn-secondary" id="closeLevelComplete">返回列表</button>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="game-over-dialog">
+    <div class="dialog">
+      <h3 id="game-over-message"></h3>
+      <p id="game-over-detail" style="font-size:14px;color:var(--text-secondary);margin:10px 0;"></p>
+      <button class="btn btn-primary" id="closeGameOver">返回主页</button>
+      <button class="btn btn-secondary" id="reviewBoard">👀 查看棋盘</button>
+    </div>
+  </div>
+
+  <!-- ==================== 查看棋盘时的浮动返回按钮 ==================== -->
+  <button class="btn btn-primary" id="reviewBackBtn" style="display:none;position:fixed;top:14px;right:14px;z-index:150;padding:8px 14px;font-size:13px;">🏠 返回主页</button>
+
+  <!-- ==================== 底部导航 ==================== -->
+  <div class="bottom-nav">
+    <button class="nav-btn" data-screen="teaching">
+      <span class="nav-icon">📖</span> 教学
+    </button>
+    <button class="nav-btn" data-screen="challenge">
+      <span class="nav-icon">🏆</span> 闯关
+    </button>
+    <button class="nav-btn" data-screen="battle">
+      <span class="nav-icon">⚔️</span> 对战
+    </button>
+    <button class="nav-btn" data-screen="gomoku">
+      <span class="nav-icon">🎯</span> 五子棋
+    </button>
+  </div>
+
+  <!-- 脚本 -->
+  <script src="js/go-engine.js"></script>
+  <script src="js/board-renderer.js"></script>
+  <script src="js/ai-player.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/data/teaching.js"></script>
+  <script src="js/data/levels.js"></script>
+  <script src="js/data/gomoku-teaching.js"></script>
+  <script src="js/gomoku-engine.js"></script>
+  <script src="js/gomoku-renderer.js"></script>
+  <script src="js/gomoku-ai.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

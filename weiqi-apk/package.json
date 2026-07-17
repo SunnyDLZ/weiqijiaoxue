@@ -1,0 +1,18 @@
+{
+  "name": "围棋教学",
+  "version": "1.0.0",
+  "description": "围棋教学App - 从入门到精通",
+  "main": "index.html",
+  "scripts": {
+    "build": "npx cap copy",
+    "open": "npx cap open android"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^7.3.0",
+    "@capacitor/cli": "^7.3.0",
+    "@capacitor/core": "^7.3.0"
+  }
+}

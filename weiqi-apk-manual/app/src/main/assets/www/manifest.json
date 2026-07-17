@@ -1,0 +1,18 @@
+{
+  "name": "围棋教学",
+  "short_name": "围棋教学",
+  "description": "围棋教学App - 从入门到精通，循序渐进学围棋",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%231a1a2e'/><circle cx='96' cy='96' r='60' fill='%231a1a1a' stroke='%23e94560' stroke-width='4'/><line x1='30' y1='96' x2='162' y2='96' stroke='%23DEB887' stroke-width='1'/><line x1='96' y1='30' x2='96' y2='162' stroke='%23DEB887' stroke-width='1'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

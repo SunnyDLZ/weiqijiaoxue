@@ -1,0 +1,51 @@
+# ===== 依赖 =====
+node_modules/
+package-lock.json.bak
+
+# ===== 构建产物 =====
+build/
+out/
+bin/
+dist/
+*.apk
+*.aab
+*.aar
+*.ap_
+*.dex
+*.class
+
+# ===== Gradle =====
+.gradle/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# ===== 本地配置（含密钥路径，不能提交） =====
+local.properties
+signing.properties
+*.keystore
+*.jks
+env.json
+.env
+.env.local
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ===== 日志与缓存 =====
+*.log
+captures/
+.cxx/
+.externalNativeBuild
+
+# ===== 验证脚本输出 =====
+verify-output.txt
+
+# ===== Android Studio 临时 =====
+.navigation/
+.caches/
