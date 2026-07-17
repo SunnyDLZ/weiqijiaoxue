@@ -27,77 +27,21 @@ jobs:
           java-version: '21'
 
       - name: 安装 Android SDK 组件
-        id: sdk
         shell: bash
         run: |
-          set +e
-          {
-            echo "## Android SDK 诊断"
-            echo ""
-            echo "### 环境变量"
-            echo '- `ANDROID_HOME`='"$ANDROID_HOME"
-            echo '- `ANDROID_SDK_ROOT`='"$ANDROID_SDK_ROOT"
-            echo '- `JAVA_HOME`='"$JAVA_HOME"
-            echo ""
-            echo "### 寻找 sdkmanager"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          SDKMANAGER=""
-          for p in \
-            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            "$ANDROID_HOME/cmdline-tools/bin/sdkmanager" \
-            "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"; do
-            if [ -f "$p" ]; then SDKMANAGER="$p"; break; fi
-          done
-          if [ -z "$SDKMANAGER" ]; then
+          set -e
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMANAGER" ]; then
             SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager 2>/dev/null | head -1)
           fi
-          echo '- `sdkmanager`='"$SDKMANAGER" >> "$GITHUB_STEP_SUMMARY"
-
-          {
-            echo ""
-            echo "### 安装前已存在的组件"
-            echo "**platforms:**"
-            ls "$ANDROID_HOME/platforms" 2>/dev/null || echo "无"
-            echo ""
-            echo "**build-tools:**"
-            ls "$ANDROID_HOME/build-tools" 2>/dev/null || echo "无"
-            echo ""
-            echo "### 安装 android-36 + build-tools;36.1.0"
-          } >> "$GITHUB_STEP_SUMMARY"
-
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1
-          INSTALL_LOG=$(yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.1.0" 2>&1)
-          INSTALL_EXIT=$?
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "$INSTALL_LOG" | tail -20 >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "- 安装退出码: \`$INSTALL_EXIT\`" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ $INSTALL_EXIT -ne 0 ]; then
-            {
-              echo ""
-              echo "### 首次安装失败，尝试备选版本"
-              echo "**可用 build-tools 3x:**"
-              "$SDKMANAGER" --list 2>/dev/null | grep -E "build-tools;3[0-9]" | head -10
-              echo ""
-              echo "**可用 platforms android-3x:**"
-              "$SDKMANAGER" --list 2>/dev/null | grep -E "platforms;android-3[0-9]" | head -10
-            } >> "$GITHUB_STEP_SUMMARY"
-            # 尝试 36.0.0
-            yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" 2>&1 | tail -10
-          fi
-
-          {
-            echo ""
-            echo "### 安装后已存在的组件"
-            echo "**platforms:**"
-            ls "$ANDROID_HOME/platforms" 2>/dev/null || echo "无"
-            echo ""
-            echo "**build-tools:**"
-            ls "$ANDROID_HOME/build-tools" 2>/dev/null || echo "无"
-          } >> "$GITHUB_STEP_SUMMARY"
+          yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.1.0" || {
+            echo "⚠️ 安装 android-36/build-tools;36.1.0 失败，列出可用版本："
+            "$SDKMANAGER" --list | grep -E "build-tools;3[0-9]|platforms;android-3[0-9]" | head -20
+            exit 1
+          }
+          echo "已安装组件："
+          "$SDKMANAGER" --list_installed 2>/dev/null || true
 
       - name: 配置 Node.js
         uses: actions/setup-node@v4
@@ -117,54 +61,29 @@ jobs:
         run: chmod +x gradlew
 
       - name: 构建 Debug APK
-        id: gradle
-        continue-on-error: true
         shell: bash
         run: |
           set +e
           cd weiqi-apk/android
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
           CODE=${PIPESTATUS[0]}
-          echo "gradle_exit=$CODE" >> $GITHUB_OUTPUT
           if [ $CODE -ne 0 ]; then
-            {
-              echo "## ❌ Gradle 构建失败 (exit=$CODE)"
-              echo ""
-              echo "### 最后 80 行日志"
-              echo '```'
-              tail -80 /tmp/gradle.log
-              echo '```'
-              echo ""
-              echo "### SDK 状态"
-              echo "**platforms:**"
-              ls "$ANDROID_HOME/platforms" 2>/dev/null
-              echo "**build-tools:**"
-              ls "$ANDROID_HOME/build-tools" 2>/dev/null
-              echo ""
-              echo "### local.properties"
-              echo '```'
-              cat local.properties 2>/dev/null || echo "无 local.properties"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            # 提取关键错误行作为 annotation（GitHub 会显示在 run summary）
-            echo "=== 关键错误行 ==="
-            grep -E "FAILURE|What went wrong|Caused by|error:|Could not|Failed to|Cannot|Exception|unable to|not found" /tmp/gradle.log | head -20 | while IFS= read -r line; do
+            # 提取关键错误行作为 annotation，便于在 run summary 查看
+            grep -E "FAILURE|What went wrong|Caused by|error:|Could not|Failed to|Exception" /tmp/gradle.log | head -15 | while IFS= read -r line; do
               echo "::error::$line"
             done
           fi
           exit $CODE
 
-      - name: 上传构建日志（失败时）
-        if: always()
+      - name: 上传构建日志（仅失败时）
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: gradle-build-log
           path: /tmp/gradle.log
           retention-days: 7
-          if-no-files-found: warn
 
       - name: 重命名 APK
-        if: steps.gradle.outputs.gradle_exit == '0'
         id: rename
         run: |
           APK_DIR="weiqi-apk/android/app/build/outputs/apk/debug"
@@ -175,7 +94,6 @@ jobs:
           echo "apk_name=$NEW_NAME" >> $GITHUB_OUTPUT
 
       - name: 上传 APK 制品
-        if: steps.gradle.outputs.gradle_exit == '0'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.rename.outputs.apk_name }}
@@ -184,7 +102,6 @@ jobs:
           if-no-files-found: error
 
       - name: 输出 APK 大小
-        if: steps.gradle.outputs.gradle_exit == '0'
         run: |
           SIZE=$(stat -c%s "${{ steps.rename.outputs.apk_path }}")
           echo "APK 大小: $((SIZE / 1024)) KB"
