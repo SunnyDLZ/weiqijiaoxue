@@ -29,19 +29,20 @@ jobs:
       - name: 安装 Android SDK 组件
         shell: bash
         run: |
-          set -e
+          set +e
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -f "$SDKMANAGER" ]; then
             SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager 2>/dev/null | head -1)
           fi
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1
-          yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.1.0" || {
-            echo "⚠️ 安装 android-36/build-tools;36.1.0 失败，列出可用版本："
+          yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.1.0" 2>&1 | tail -10
+          # sdkmanager 对已安装的包可能返回非零，只要组件存在即可
+          if [ ! -d "$ANDROID_HOME/platforms/android-36" ] || [ ! -d "$ANDROID_HOME/build-tools/36.1.0" ]; then
+            echo "⚠️ android-36 或 build-tools;36.1.0 未安装，列出可用版本："
             "$SDKMANAGER" --list | grep -E "build-tools;3[0-9]|platforms;android-3[0-9]" | head -20
             exit 1
-          }
-          echo "已安装组件："
-          "$SDKMANAGER" --list_installed 2>/dev/null || true
+          fi
+          echo "✓ android-36 和 build-tools;36.1.0 已就绪"
 
       - name: 配置 Node.js
         uses: actions/setup-node@v4
