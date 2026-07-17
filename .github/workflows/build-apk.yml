@@ -117,12 +117,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: 构建 Debug APK
+        id: gradle
+        continue-on-error: true
         shell: bash
         run: |
           set +e
           cd weiqi-apk/android
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
           CODE=${PIPESTATUS[0]}
+          echo "gradle_exit=$CODE" >> $GITHUB_OUTPUT
           if [ $CODE -ne 0 ]; then
             {
               echo "## ❌ Gradle 构建失败 (exit=$CODE)"
@@ -143,10 +146,25 @@ jobs:
               cat local.properties 2>/dev/null || echo "无 local.properties"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            # 提取关键错误行作为 annotation（GitHub 会显示在 run summary）
+            echo "=== 关键错误行 ==="
+            grep -E "FAILURE|What went wrong|Caused by|error:|Could not|Failed to|Cannot|Exception|unable to|not found" /tmp/gradle.log | head -20 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
           fi
           exit $CODE
 
+      - name: 上传构建日志（失败时）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: /tmp/gradle.log
+          retention-days: 7
+          if-no-files-found: warn
+
       - name: 重命名 APK
+        if: steps.gradle.outputs.gradle_exit == '0'
         id: rename
         run: |
           APK_DIR="weiqi-apk/android/app/build/outputs/apk/debug"
@@ -157,6 +175,7 @@ jobs:
           echo "apk_name=$NEW_NAME" >> $GITHUB_OUTPUT
 
       - name: 上传 APK 制品
+        if: steps.gradle.outputs.gradle_exit == '0'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.rename.outputs.apk_name }}
@@ -165,6 +184,7 @@ jobs:
           if-no-files-found: error
 
       - name: 输出 APK 大小
+        if: steps.gradle.outputs.gradle_exit == '0'
         run: |
           SIZE=$(stat -c%s "${{ steps.rename.outputs.apk_path }}")
           echo "APK 大小: $((SIZE / 1024)) KB"
